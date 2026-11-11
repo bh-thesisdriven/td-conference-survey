@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thesis Driven — Rate the Conferences You Attend</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --purple: #7A3EF2;
+      --purple-dark: #3A1879;
+      --ink: #141414;
+      --line: #e6e3ef;
+      --muted: #6b6b73;
+      --bg: #f6f4fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      margin: 0;
+      padding: 32px 16px 64px;
+    }
+    .card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(58, 24, 121, .08);
+      overflow: hidden;
+    }
+    .head {
+      background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+      color: #fff;
+      padding: 30px 34px;
+    }
+    .head h1 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-weight: 400;
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
+    }
+    .anon {
+      display: inline-flex; align-items: center; gap: 7px;
+      margin-top: 14px; padding: 7px 12px;
+      background: rgba(255,255,255,.15); border-radius: 999px;
+      font-size: 13px; font-weight: 500;
+    }
+    .body { padding: 28px 34px 34px; }
+
+    /* progress */
+    .steps { display: flex; gap: 8px; margin-bottom: 22px; }
+    .steps .dot { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+    .steps .dot.on { background: var(--purple); }
+
+    .lead { font-size: 15px; margin: 0 0 18px; }
+    .lead strong { font-weight: 600; }
+
+    /* search */
+    .search { position: relative; margin-bottom: 18px; }
+    .search input {
+      width: 100%; font: inherit; padding: 12px 14px; border: 1px solid var(--line);
+      border-radius: 10px; background: #fff; color: var(--ink);
+    }
+    .search input:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(122,62,242,.12); }
+
+    .group-label {
+      font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--muted); font-weight: 700; margin: 20px 0 8px;
+    }
+    .group:first-of-type .group-label { margin-top: 4px; }
+
+    /* checkable pill rows */
+    .pick {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px;
+      margin-bottom: 8px; cursor: pointer; transition: border-color .12s, background .12s;
+    }
+    .pick:hover { border-color: #cdbff3; }
+    .pick.sel { border-color: var(--purple); background: rgba(122,62,242,.05); }
+    .pick input { position: absolute; opacity: 0; pointer-events: none; }
+    .box {
+      width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--line);
+      flex: none; display: grid; place-items: center; color: #fff; font-size: 13px;
+    }
+    .pick.sel .box { background: var(--purple); border-color: var(--purple); }
+    .pick .name { font-size: 15px; font-weight: 500; }
+
+    .addrow { margin-top: 16px; }
+    .addrow .inrow { display: flex; gap: 10px; }
+    .addrow input {
+      flex: 1; font: inherit; padding: 11px 13px; border: 1px solid var(--line);
+      border-radius: 10px; background: #fff; color: var(--ink);
+    }
+    .addrow input:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(122,62,242,.12); }
+    .addbtn {
+      border: 1px dashed var(--purple); background: none; color: var(--purple);
+      border-radius: 10px; padding: 0 16px; font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .addbtn:hover { background: rgba(122,62,242,.06); }
+
+    .noresults { color: var(--muted); font-size: 14px; padding: 8px 2px; }
+
+    /* rating cards (step 2) */
+    .rcard {
+      border: 1px solid var(--line); border-radius: 12px; padding: 20px 20px 22px; margin-bottom: 16px;
+    }
+    .rcard h3 {
+      font-family: 'DM Serif Display', Georgia, serif; font-weight: 400;
+      margin: 0 0 4px; font-size: 21px;
+    }
+    .rlabel { display: block; font-weight: 600; font-size: 13px; margin: 18px 0 8px; }
+    .rlabel .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+
+    .slider { display: flex; align-items: center; gap: 16px; }
+    .slider input[type=range] {
+      flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px;
+      background: var(--line); outline: none;
+    }
+    .slider input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--purple); cursor: pointer; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(58,24,121,.3);
+    }
+    .slider input[type=range]::-moz-range-thumb {
+      width: 22px; height: 22px; border-radius: 50%; background: var(--purple);
+      cursor: pointer; border: 3px solid #fff;
+    }
+    .score {
+      font-family: 'DM Serif Display', Georgia, serif; font-size: 26px; color: var(--purple);
+      min-width: 58px; text-align: right;
+    }
+    .score .max { font-size: 14px; color: var(--muted); }
+    .scalehint { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px;
+      border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: border-color .12s, background .12s, color .12s;
+    }
+    .tag:hover { border-color: #cdbff3; }
+    .tag.sel { background: var(--purple); border-color: var(--purple); color: #fff; }
+    .tag input { position: absolute; opacity: 0; pointer-events: none; }
+
+    textarea, .other-in {
+      width: 100%; font: inherit; padding: 11px 13px; border: 1px solid var(--line);
+      border-radius: 10px; background: #fff; color: var(--ink);
+    }
+    textarea { resize: vertical; min-height: 64px; }
+    .other-in { margin-top: 8px; }
+    textarea:focus, .other-in:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(122,62,242,.12); }
+
+    /* actions */
+    .actions { margin-top: 24px; display: flex; gap: 12px; }
+    button.primary {
+      flex: 1; border: none; border-radius: 10px; cursor: pointer;
+      background: var(--purple); color: #fff; font: inherit; font-weight: 700; padding: 14px; font-size: 15px;
+    }
+    button.primary:hover { background: var(--purple-dark); }
+    button.primary:disabled { opacity: .5; cursor: default; }
+    button.ghost {
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      border-radius: 10px; cursor: pointer; font: inherit; font-weight: 600; padding: 14px 20px; font-size: 15px;
+    }
+    button.ghost:hover { border-color: var(--purple); color: var(--purple); }
+
+    .err {
+      display: none; margin-top: 16px; background: #fdecec; color: #b02a2a;
+      border-radius: 10px; padding: 12px 14px; font-size: 13px;
+    }
+
+    .done { display: none; text-align: center; padding: 24px 8px; }
+    .done .check {
+      width: 60px; height: 60px; border-radius: 50%; background: rgba(122,62,242,.12);
+      color: var(--purple); font-size: 32px; line-height: 60px; margin: 0 auto 16px;
+    }
+    .done h2 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; margin: 0 0 8px; font-size: 26px; }
+    .done p { color: var(--muted); margin: 4px 0; font-size: 15px; }
+    .done .again {
+      display: inline-block; margin-top: 22px; background: var(--purple); color: #fff;
+      border: 1px solid var(--purple); border-radius: 10px; padding: 13px 24px;
+      font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
+    }
+    .done .again:hover { background: var(--purple-dark); border-color: var(--purple-dark); }
+
+    .foot { text-align: center; color: var(--muted); font-size: 11px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <h1>Rate the conferences you attend</h1>
+      <span class="anon">🔒 Anonymous — never attributed to you</span>
+    </div>
+
+    <div class="body">
+      <!-- STEP 1 -->
+      <div id="step1">
+        <div class="steps"><div class="dot on"></div><div class="dot"></div></div>
+        <p class="lead">Pick the real estate conferences you attended this year. On the next step you'll rate each one. Your answers feed the Thesis Driven Events Handbook and are <strong>completely anonymous</strong> — we don't collect your name or email.</p>
+
+        <div class="search"><input id="search" type="text" placeholder="Search conferences…" autocomplete="off"></div>
+
+        <div id="list"></div>
+
+        <div class="addrow">
+          <div class="group-label">Attended one that isn't listed?</div>
+          <div class="inrow">
+            <input id="customName" type="text" placeholder="Add a conference by name" autocomplete="off">
+            <button type="button" class="addbtn" onclick="addCustom()">Add</button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="primary" id="toStep2" onclick="goStep2()" disabled>Continue</button>
+        </div>
+        <div class="err" id="err1"></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="step2" style="display:none;">
+        <div class="steps"><div class="dot on"></div><div class="dot on"></div></div>
+        <p class="lead">Rate each conference from <strong>0 to 10</strong>, note who it's good for, and add any candid commentary. Everything here stays anonymous.</p>
+
+        <div id="rcards"></div>
+
+        <div class="actions">
+          <button type="button" class="ghost" onclick="backStep1()">Back</button>
+          <button type="button" class="primary" id="submitBtn" onclick="submitAll()">Submit ratings</button>
+        </div>
+        <div class="err" id="err2"></div>
+      </div>
+
+      <!-- DONE -->
+      <div class="done" id="done">
+        <div class="check">✓</div>
+        <h2>Thank you</h2>
+        <p>Your anonymous ratings are in. They'll help shape the next Events Handbook.</p>
+        <a class="again" href="https://thesisdriven.com/letters">Return to Thesis Driven</a>
+      </div>
+
+      <div class="foot">Thesis Driven · Real Estate Events Handbook survey</div>
+    </div>
+  </div>
+
+  <script>
+    // ENDPOINT = the Apps Script web-app /exec URL (set by build.py / config.json).
+    var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx_6bCLk6skKS3nReyJ6dx5mlNa95YN_nuzDJCY3NJggW_6viVBvmPvIPzF9P_n5YRb/exec';
+    // DATA = conferences + audiences, baked in from Code.gs at build time.
+    var DATA = {"conferences": ["ADISA", "AFIRE", "AHF Live (Affordable Housing Finance)", "AIA Conference", "ALIS (Americas Lodging Investment Summit)", "Apartment Innovation & Marketing Conference (AIM)", "Apartmentalize (NAA)", "AppFolio Future", "ARES", "Best Ever Conference", "Bisnow Ascent", "Bisnow Elevate", "Bisnow Escape", "Bisnow (Other)", "Blueprint", "BOMA International", "BuiltWorlds", "CoreNet Global Summit", "CREFC (CRE Finance Council)", "CRETech New York", "Expo Real (Munich)", "The Gathering", "Greenbuild", "Housing Innovation Summit", "Hunter Hotel Investment Conference", "ICSC", "IMN (any show)", "Inman Connect New York", "The Lodging Conference", "MBA CREF (Commercial/Multifamily Finance)", "MHI (Manufactured Housing Institute)", "MIPIM", "Multifamily Executive", "NAHB International Builders' Show (IBS)", "NAIOP (Converge / Symposium)", "NAIOP I.CON (industrial)", "NAREIM", "Nareit (REITweek / REITworld)", "NARPM", "NexusCon", "NIC (Seniors Housing)", "NMHC Annual Meeting", "NMHC OpTech", "NMHC Student Housing Conference", "Novogradac Affordable Housing Conference", "NYU Hospitality Investment Conference", "PERE Forum", "PREA (Pension Real Estate Association)", "Realcomm | IBcon", "RealPage RealWorld", "Reconvene", "RETCON", "SIOR World Conference", "SSA (Self Storage Association)", "ULI"], "audiences": ["Real estate developers", "Real estate investors / LPs", "Real estate operators (OpCos)", "Property managers", "VCs", "Tech entrepreneurs / founders", "Brokers", "Lenders / capital providers", "Service providers (legal, consulting, etc.)", "Architects / design & construction", "Policy / government", "Students / new entrants"], "ratingMin": 0, "ratingMax": 10};
+    var selected = [];   // array of conference names, in pick order
+
+    renderList('');
+
+    /* ---------- step 1: pick ---------- */
+    function renderList(filter) {
+      var list = document.getElementById('list');
+      list.innerHTML = '';
+      var q = (filter || '').trim().toLowerCase();
+      var anyShown = false;
+
+      DATA.conferences.forEach(function (name) {
+        if (q && name.toLowerCase().indexOf(q) === -1) return;
+        list.appendChild(pickRow(name));
+        anyShown = true;
+      });
+
+      // any custom-added names that are selected but not in the base list
+      var customs = selected.filter(function (n) { return !inBaseList(n); });
+      if (customs.length) {
+        var g2 = document.createElement('div');
+        g2.className = 'group';
+        var gl2 = document.createElement('div');
+        gl2.className = 'group-label';
+        gl2.textContent = 'Added by you';
+        g2.appendChild(gl2);
+        customs.forEach(function (name) {
+          if (!q || name.toLowerCase().indexOf(q) !== -1) g2.appendChild(pickRow(name));
+        });
+        if (g2.childNodes.length > 1) { list.appendChild(g2); anyShown = true; }
+      }
+
+      if (!anyShown) {
+        var nr = document.createElement('div');
+        nr.className = 'noresults';
+        nr.textContent = 'No matches. Add it below if you attended it.';
+        list.appendChild(nr);
+      }
+    }
+
+    function pickRow(name) {
+      var sel = selected.indexOf(name) !== -1;
+      var row = document.createElement('label');
+      row.className = 'pick' + (sel ? ' sel' : '');
+      row.innerHTML = '<span class="box">' + (sel ? '✓' : '') + '</span><span class="name"></span>';
+      row.querySelector('.name').textContent = name;
+      row.addEventListener('click', function (e) {
+        e.preventDefault();
+        toggle(name);
+      });
+      return row;
+    }
+
+    function inBaseList(name) {
+      return DATA.conferences.indexOf(name) !== -1;
+    }
+
+    function toggle(name) {
+      var i = selected.indexOf(name);
+      if (i === -1) selected.push(name); else selected.splice(i, 1);
+      renderList(document.getElementById('search').value);
+      updateContinue();
+    }
+
+    function addCustom() {
+      var inp = document.getElementById('customName');
+      var name = inp.value.trim();
+      if (!name) return;
+      // de-dupe case-insensitively against everything
+      var exists = selected.concat(flatBase()).some(function (n) {
+        return n.toLowerCase() === name.toLowerCase();
+      });
+      if (!exists) selected.push(name);
+      inp.value = '';
+      document.getElementById('search').value = '';
+      renderList('');
+      updateContinue();
+    }
+
+    function flatBase() {
+      return DATA.conferences.slice();
+    }
+
+    function updateContinue() {
+      document.getElementById('toStep2').disabled = selected.length === 0;
+    }
+
+    document.getElementById('search').addEventListener('input', function () {
+      renderList(this.value);
+    });
+    document.getElementById('customName').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); addCustom(); }
+    });
+
+    /* ---------- step 2: rate ---------- */
+    function goStep2() {
+      if (!selected.length) return;
+      buildCards();
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    function backStep1() {
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step1').style.display = 'block';
+      renderList(document.getElementById('search').value);
+      window.scrollTo(0, 0);
+    }
+
+    function buildCards() {
+      var wrap = document.getElementById('rcards');
+      wrap.innerHTML = '';
+      selected.forEach(function (name, idx) {
+        var card = document.createElement('div');
+        card.className = 'rcard';
+        card.dataset.idx = idx;
+
+        var h = document.createElement('h3');
+        h.textContent = name;
+        card.appendChild(h);
+
+        // rating
+        var rl = document.createElement('label');
+        rl.className = 'rlabel';
+        rl.innerHTML = 'Your rating';
+        card.appendChild(rl);
+
+        var sl = document.createElement('div');
+        sl.className = 'slider';
+        var mid = Math.round((DATA.ratingMin + DATA.ratingMax) / 2);
+        sl.innerHTML =
+          '<input type="range" min="' + DATA.ratingMin + '" max="' + DATA.ratingMax + '" step="1" value="' + mid + '" class="rateInput">' +
+          '<span class="score"><span class="sval">' + mid + '</span><span class="max">/' + DATA.ratingMax + '</span></span>';
+        card.appendChild(sl);
+        var hintEl = document.createElement('div');
+        hintEl.className = 'scalehint';
+        hintEl.innerHTML = '<span>Skip it</span><span>Worth traveling for</span>';
+        card.appendChild(hintEl);
+        var range = sl.querySelector('.rateInput');
+        var sval = sl.querySelector('.sval');
+        range.addEventListener('input', function () { sval.textContent = this.value; });
+
+        // audiences
+        var al = document.createElement('label');
+        al.className = 'rlabel';
+        al.innerHTML = 'Who is it good for? <span class="hint">Select any</span>';
+        card.appendChild(al);
+
+        var tags = document.createElement('div');
+        tags.className = 'tags';
+        DATA.audiences.forEach(function (aud) {
+          var t = document.createElement('label');
+          t.className = 'tag';
+          t.innerHTML = '<span></span>';
+          t.querySelector('span').textContent = aud;
+          t.dataset.aud = aud;
+          t.addEventListener('click', function (e) {
+            e.preventDefault();
+            t.classList.toggle('sel');
+          });
+          tags.appendChild(t);
+        });
+        card.appendChild(tags);
+
+        var other = document.createElement('input');
+        other.type = 'text';
+        other.className = 'other-in otherInput';
+        other.placeholder = 'Other audience (optional)';
+        card.appendChild(other);
+
+        // commentary
+        var cl = document.createElement('label');
+        cl.className = 'rlabel';
+        cl.innerHTML = 'Commentary <span class="hint">Candid takes welcome</span>';
+        card.appendChild(cl);
+        var ta = document.createElement('textarea');
+        ta.className = 'commentInput';
+        ta.placeholder = 'What worked, what didn’t…';
+        card.appendChild(ta);
+
+        wrap.appendChild(card);
+      });
+    }
+
+    function submitAll() {
+      var cards = document.querySelectorAll('#rcards .rcard');
+      var ratings = [];
+      cards.forEach(function (card) {
+        var name = selected[Number(card.dataset.idx)];
+        var rating = Number(card.querySelector('.rateInput').value);
+        var goodFor = [];
+        card.querySelectorAll('.tag.sel').forEach(function (t) { goodFor.push(t.dataset.aud); });
+        var goodForOther = card.querySelector('.otherInput').value.trim();
+        var commentary = card.querySelector('.commentInput').value.trim();
+        ratings.push({
+          conference: name, rating: rating, goodFor: goodFor,
+          goodForOther: goodForOther, commentary: commentary
+        });
+      });
+
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+      hideErr('err2');
+
+      // Plain-string body keeps this a CORS "simple request" (no preflight);
+      // Apps Script doPost reads it from e.postData.contents.
+      fetch(ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({ ratings: ratings })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (!res || !res.ok) throw new Error((res && res.error) || 'Save failed');
+          document.getElementById('step2').style.display = 'none';
+          document.getElementById('done').style.display = 'block';
+          window.scrollTo(0, 0);
+        })
+        .catch(function (err) {
+          btn.disabled = false;
+          btn.textContent = 'Submit ratings';
+          showErr('err2', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
+        });
+    }
+
+    function showErr(id, msg) { var e = document.getElementById(id); e.textContent = msg; e.style.display = 'block'; }
+    function hideErr(id) { document.getElementById(id).style.display = 'none'; }
+  </script>
+</body>
+</html>
