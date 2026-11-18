@@ -60,6 +60,12 @@
     .lead { font-size: 15px; margin: 0 0 18px; }
     .lead strong { font-weight: 600; }
 
+    .qbig {
+      font-family: 'DM Serif Display', Georgia, serif; font-weight: 400;
+      font-size: 28px; line-height: 1.15; margin: 2px 0 6px;
+    }
+    .qsub { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+
     /* search */
     .search { position: relative; margin-bottom: 18px; }
     .search input {
@@ -238,7 +244,8 @@
       <!-- STEP 3 -->
       <div id="step3" style="display:none;">
         <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
-        <p class="lead">Last step. Which conferences are you <strong>planning to attend in <span class="yrPlan"></span></strong>? Pick any — including ones you didn't attend this year. This is optional, so skip it if you're not sure.</p>
+        <h2 class="qbig">What are you planning to attend in <span class="yrPlan"></span>?</h2>
+        <p class="qsub">Optional — pick any, including ones you didn't attend this year.</p>
 
         <div class="search"><input id="planSearch" type="text" placeholder="Search conferences…" autocomplete="off"></div>
 
