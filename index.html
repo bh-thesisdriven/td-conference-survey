@@ -200,8 +200,8 @@
     <div class="body">
       <!-- STEP 1 -->
       <div id="step1">
-        <div class="steps"><div class="dot on"></div><div class="dot"></div></div>
-        <p class="lead">Pick the real estate conferences you attended this year. On the next step you'll rate each one. Your answers feed the Thesis Driven Events Handbook and are <strong>completely anonymous</strong> — we don't collect your name or email.</p>
+        <div class="steps"><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+        <p class="lead">Pick the real estate conferences you attended <strong>in <span class="yrAttend"></span></strong>. On the next step you'll rate each one, and after that we'll ask which you plan to attend next year. Your answers feed the Thesis Driven Events Handbook and are <strong>completely anonymous</strong> — we don't collect your name or email.</p>
 
         <div class="search"><input id="search" type="text" placeholder="Search conferences…" autocomplete="off"></div>
 
@@ -223,16 +223,40 @@
 
       <!-- STEP 2 -->
       <div id="step2" style="display:none;">
-        <div class="steps"><div class="dot on"></div><div class="dot on"></div></div>
-        <p class="lead">Rate each conference from <strong>0 to 10</strong>, note who it's good for, and add any candid commentary. Everything here stays anonymous.</p>
+        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+        <p class="lead">Rate each conference you attended in <strong><span class="yrAttend"></span></strong> from <strong>0 to 10</strong>, note who it's good for, and add any candid commentary. Everything here stays anonymous.</p>
 
         <div id="rcards"></div>
 
         <div class="actions">
           <button type="button" class="ghost" onclick="backStep1()">Back</button>
-          <button type="button" class="primary" id="submitBtn" onclick="submitAll()">Submit ratings</button>
+          <button type="button" class="primary" id="toStep3" onclick="goStep3()">Continue</button>
         </div>
         <div class="err" id="err2"></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="step3" style="display:none;">
+        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+        <p class="lead">Last step. Which conferences are you <strong>planning to attend in <span class="yrPlan"></span></strong>? Pick any — including ones you didn't attend this year. This is optional, so skip it if you're not sure.</p>
+
+        <div class="search"><input id="planSearch" type="text" placeholder="Search conferences…" autocomplete="off"></div>
+
+        <div id="planList"></div>
+
+        <div class="addrow">
+          <div class="group-label">Planning one that isn't listed?</div>
+          <div class="inrow">
+            <input id="planName" type="text" placeholder="Add a conference by name" autocomplete="off">
+            <button type="button" class="addbtn" onclick="addPlanCustom()">Add</button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="ghost" onclick="backStep2()">Back</button>
+          <button type="button" class="primary" id="submitBtn" onclick="submitAll()">Submit</button>
+        </div>
+        <div class="err" id="err3"></div>
       </div>
 
       <!-- DONE -->
@@ -250,27 +274,34 @@
   <script>
     // ENDPOINT = the Apps Script web-app /exec URL (set by build.py / config.json).
     var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyQeIxpkXtMyH6GUj2g9yD0PEF_5QFW-vgTx6Q5kF3onNi-Jw1Z9y6_kaaOU_BD-G7b/exec';
-    // DATA = conferences + audiences, baked in from Code.gs at build time.
-    var DATA = {"conferences": ["ADISA", "AFIRE", "AHF Live (Affordable Housing Finance)", "AIA Conference", "ALIS (Americas Lodging Investment Summit)", "Apartment Innovation & Marketing Conference (AIM)", "Apartmentalize (NAA)", "AppFolio Future", "ARES", "Best Ever Conference", "Bisnow Ascent", "Bisnow Elevate", "Bisnow Escape", "Bisnow (Other)", "Blueprint", "BOMA International", "BuiltWorlds", "CoreNet Global Summit", "CREFC (CRE Finance Council)", "CRETech New York", "Expo Real (Munich)", "The Gathering", "Greenbuild", "Housing Innovation Summit", "Hunter Hotel Investment Conference", "ICSC", "IMN (any show)", "Inman Connect New York", "The Lodging Conference", "MBA CREF (Commercial/Multifamily Finance)", "MHI (Manufactured Housing Institute)", "MIPIM", "Multifamily Executive", "NAHB International Builders' Show (IBS)", "NAIOP (Converge / Symposium)", "NAIOP I.CON (industrial)", "NAREIM", "Nareit (REITweek / REITworld)", "NARPM", "NexusCon", "NIC (Seniors Housing)", "NMHC Annual Meeting", "NMHC OpTech", "NMHC Student Housing Conference", "Novogradac Affordable Housing Conference", "NYU Hospitality Investment Conference", "PERE Forum", "PREA (Pension Real Estate Association)", "Realcomm | IBcon", "RealPage RealWorld", "Reconvene", "RETCON", "SIOR World Conference", "SSA (Self Storage Association)", "ULI"], "audiences": ["Real estate developers", "Real estate investors / LPs", "Real estate operators (OpCos)", "Property managers", "VCs", "Tech entrepreneurs / founders", "Brokers", "Lenders / capital providers", "Service providers (legal, consulting, etc.)", "Architects / design & construction", "Policy / government", "Students / new entrants"], "ratingMin": 0, "ratingMax": 10};
-    var selected = [];   // array of conference names, in pick order
+    // DATA = conferences + audiences + surveyYear, baked in from Code.gs at build time.
+    var DATA = {"conferences": ["ADISA", "AFIRE", "AHF Live (Affordable Housing Finance)", "AIA Conference", "ALIS (Americas Lodging Investment Summit)", "Apartment Innovation & Marketing Conference (AIM)", "Apartmentalize (NAA)", "AppFolio Future", "ARES", "Best Ever Conference", "Bisnow Ascent", "Bisnow Elevate", "Bisnow Escape", "Bisnow (Other)", "Blueprint", "BOMA International", "BuiltWorlds", "CoreNet Global Summit", "CREFC (CRE Finance Council)", "CRETech New York", "Expo Real (Munich)", "The Gathering", "Greenbuild", "Housing Innovation Summit", "Hunter Hotel Investment Conference", "ICSC", "IMN (any show)", "Inman Connect New York", "The Lodging Conference", "MBA CREF (Commercial/Multifamily Finance)", "MHI (Manufactured Housing Institute)", "MIPIM", "Multifamily Executive", "NAHB International Builders' Show (IBS)", "NAIOP (Converge / Symposium)", "NAIOP I.CON (industrial)", "NAREIM", "Nareit (REITweek / REITworld)", "NARPM", "NexusCon", "NIC (Seniors Housing)", "NMHC Annual Meeting", "NMHC OpTech", "NMHC Student Housing Conference", "Novogradac Affordable Housing Conference", "NYU Hospitality Investment Conference", "PERE Forum", "PREA (Pension Real Estate Association)", "Realcomm | IBcon", "RealPage RealWorld", "Reconvene", "RETCON", "SIOR World Conference", "SSA (Self Storage Association)", "ULI"], "audiences": ["Real estate developers", "Real estate investors / LPs", "Real estate operators (OpCos)", "Property managers", "VCs", "Tech entrepreneurs / founders", "Brokers", "Lenders / capital providers", "Service providers (legal, consulting, etc.)", "Architects / design & construction", "Policy / government", "Students / new entrants"], "ratingMin": 0, "ratingMax": 10, "surveyYear": 2026};
+    var SURVEY_YEAR = DATA.surveyYear;       // the year being rated (step 1 + 2)
+    var PLAN_YEAR = SURVEY_YEAR + 1;         // next year (step 3)
 
-    renderList('');
+    var selected = [];   // conferences attended in SURVEY_YEAR, in pick order
+    var planning = [];   // conferences the reader plans to attend in PLAN_YEAR
+    var customs = [];    // any conference names the reader typed in (shared by both lists)
 
-    /* ---------- step 1: pick ---------- */
-    function renderList(filter) {
-      var list = document.getElementById('list');
+    // Fill the year placeholders in the copy.
+    [].forEach.call(document.querySelectorAll('.yrAttend'), function (el) { el.textContent = SURVEY_YEAR; });
+    [].forEach.call(document.querySelectorAll('.yrPlan'), function (el) { el.textContent = PLAN_YEAR; });
+
+    /* ---------- generic checklist picker (shared by step 1 and step 3) ---------- */
+    function allNames() { return DATA.conferences.concat(customs); }
+
+    function renderPicker(listId, searchVal, target, rerender) {
+      var list = document.getElementById(listId);
       list.innerHTML = '';
-      var q = (filter || '').trim().toLowerCase();
+      var q = (searchVal || '').trim().toLowerCase();
       var anyShown = false;
 
       DATA.conferences.forEach(function (name) {
         if (q && name.toLowerCase().indexOf(q) === -1) return;
-        list.appendChild(pickRow(name));
+        list.appendChild(pickRow(name, target, rerender));
         anyShown = true;
       });
 
-      // any custom-added names that are selected but not in the base list
-      var customs = selected.filter(function (n) { return !inBaseList(n); });
       if (customs.length) {
         var g2 = document.createElement('div');
         g2.className = 'group';
@@ -279,7 +310,7 @@
         gl2.textContent = 'Added by you';
         g2.appendChild(gl2);
         customs.forEach(function (name) {
-          if (!q || name.toLowerCase().indexOf(q) !== -1) g2.appendChild(pickRow(name));
+          if (!q || name.toLowerCase().indexOf(q) !== -1) g2.appendChild(pickRow(name, target, rerender));
         });
         if (g2.childNodes.length > 1) { list.appendChild(g2); anyShown = true; }
       }
@@ -287,64 +318,59 @@
       if (!anyShown) {
         var nr = document.createElement('div');
         nr.className = 'noresults';
-        nr.textContent = 'No matches. Add it below if you attended it.';
+        nr.textContent = 'No matches. Add it below if it applies.';
         list.appendChild(nr);
       }
     }
 
-    function pickRow(name) {
-      var sel = selected.indexOf(name) !== -1;
+    function pickRow(name, target, rerender) {
+      var sel = target.indexOf(name) !== -1;
       var row = document.createElement('label');
       row.className = 'pick' + (sel ? ' sel' : '');
       row.innerHTML = '<span class="box">' + (sel ? '✓' : '') + '</span><span class="name"></span>';
       row.querySelector('.name').textContent = name;
       row.addEventListener('click', function (e) {
         e.preventDefault();
-        toggle(name);
+        var i = target.indexOf(name);
+        if (i === -1) target.push(name); else target.splice(i, 1);
+        rerender();
       });
       return row;
     }
 
-    function inBaseList(name) {
-      return DATA.conferences.indexOf(name) !== -1;
-    }
-
-    function toggle(name) {
-      var i = selected.indexOf(name);
-      if (i === -1) selected.push(name); else selected.splice(i, 1);
-      renderList(document.getElementById('search').value);
-      updateContinue();
-    }
-
-    function addCustom() {
-      var inp = document.getElementById('customName');
-      var name = inp.value.trim();
-      if (!name) return;
-      // de-dupe case-insensitively against everything
-      var exists = selected.concat(flatBase()).some(function (n) {
-        return n.toLowerCase() === name.toLowerCase();
-      });
-      if (!exists) selected.push(name);
+    // Add a typed-in conference to `target` (and to the shared `customs` list if new).
+    function addCustomTo(inputId, target, after) {
+      var inp = document.getElementById(inputId);
+      var raw = inp.value.trim();
+      if (!raw) return;
+      var canon = allNames().filter(function (n) { return n.toLowerCase() === raw.toLowerCase(); })[0];
+      if (!canon) { canon = raw; customs.push(raw); }
+      if (target.indexOf(canon) === -1) target.push(canon);
       inp.value = '';
-      document.getElementById('search').value = '';
-      renderList('');
-      updateContinue();
+      after();
     }
 
-    function flatBase() {
-      return DATA.conferences.slice();
+    /* ---------- step 1: pick (attended this year) ---------- */
+    function renderStep1() {
+      renderPicker('list', document.getElementById('search').value, selected, afterStep1);
     }
-
-    function updateContinue() {
+    function afterStep1() {
+      renderStep1();
       document.getElementById('toStep2').disabled = selected.length === 0;
     }
+    function addCustom() {
+      addCustomTo('customName', selected, function () {
+        document.getElementById('search').value = '';
+        afterStep1();
+      });
+    }
 
-    document.getElementById('search').addEventListener('input', function () {
-      renderList(this.value);
-    });
+    document.getElementById('search').addEventListener('input', renderStep1);
     document.getElementById('customName').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); addCustom(); }
     });
+
+    afterStep1();   // initial render
 
     /* ---------- step 2: rate ---------- */
     function goStep2() {
@@ -358,7 +384,36 @@
     function backStep1() {
       document.getElementById('step2').style.display = 'none';
       document.getElementById('step1').style.display = 'block';
-      renderList(document.getElementById('search').value);
+      renderStep1();
+      window.scrollTo(0, 0);
+    }
+
+    /* ---------- step 3: plan (attend next year) ---------- */
+    function renderStep3() {
+      renderPicker('planList', document.getElementById('planSearch').value, planning, renderStep3);
+    }
+    function addPlanCustom() {
+      addCustomTo('planName', planning, function () {
+        document.getElementById('planSearch').value = '';
+        renderStep3();
+      });
+    }
+
+    document.getElementById('planSearch').addEventListener('input', renderStep3);
+    document.getElementById('planName').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); addPlanCustom(); }
+    });
+
+    function goStep3() {
+      renderStep3();
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step3').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    function backStep2() {
+      document.getElementById('step3').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
       window.scrollTo(0, 0);
     }
 
@@ -456,25 +511,25 @@
       var btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.textContent = 'Submitting…';
-      hideErr('err2');
+      hideErr('err3');
 
       // Plain-string body keeps this a CORS "simple request" (no preflight);
       // Apps Script doPost reads it from e.postData.contents.
       fetch(ENDPOINT, {
         method: 'POST',
-        body: JSON.stringify({ ratings: ratings })
+        body: JSON.stringify({ ratings: ratings, planning: planning, year: SURVEY_YEAR })
       })
         .then(function (r) { return r.json(); })
         .then(function (res) {
           if (!res || !res.ok) throw new Error((res && res.error) || 'Save failed');
-          document.getElementById('step2').style.display = 'none';
+          document.getElementById('step3').style.display = 'none';
           document.getElementById('done').style.display = 'block';
           window.scrollTo(0, 0);
         })
         .catch(function (err) {
           btn.disabled = false;
-          btn.textContent = 'Submit ratings';
-          showErr('err2', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
+          btn.textContent = 'Submit';
+          showErr('err3', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
         });
     }
 
