@@ -206,8 +206,8 @@
     <div class="body">
       <!-- STEP 1 -->
       <div id="step1">
-        <div class="steps"><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
-        <p class="lead">Pick the real estate conferences you attended <strong>in <span class="yrAttend"></span></strong>. On the next step you'll rate each one, and after that we'll ask which you plan to attend next year. Your answers feed the Thesis Driven Events Handbook and are <strong>completely anonymous</strong> — we don't collect your name or email.</p>
+        <div class="steps"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <p class="lead">Pick the real estate conferences you attended <strong>in <span class="yrAttend"></span></strong>, then rate each one and tell us what you plan to attend next year. Your ratings feed the Thesis Driven Events Handbook and are <strong>completely anonymous</strong> — never tied to you. At the very end you can optionally enter your name and email for the raffle; that goes on a <strong>separate list</strong> that's never linked to your answers.</p>
 
         <div class="search"><input id="search" type="text" placeholder="Search conferences…" autocomplete="off"></div>
 
@@ -229,7 +229,7 @@
 
       <!-- STEP 2 -->
       <div id="step2" style="display:none;">
-        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
         <p class="lead">Rate each conference you attended in <strong><span class="yrAttend"></span></strong> from <strong>0 to 10</strong>, note who it's good for, and add any candid commentary. Everything here stays anonymous.</p>
 
         <div id="rcards"></div>
@@ -243,7 +243,7 @@
 
       <!-- STEP 3 -->
       <div id="step3" style="display:none;">
-        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
         <h2 class="qbig">What are you planning to attend in <span class="yrPlan"></span>?</h2>
         <p class="qsub">Optional — pick any, including ones you didn't attend this year.</p>
 
@@ -261,16 +261,35 @@
 
         <div class="actions">
           <button type="button" class="ghost" onclick="backStep2()">Back</button>
-          <button type="button" class="primary" id="submitBtn" onclick="submitAll()">Submit</button>
+          <button type="button" class="primary" id="toStep4" onclick="goStep4()">Continue</button>
         </div>
         <div class="err" id="err3"></div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div id="step4" style="display:none;">
+        <div class="steps"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+        <h2 class="qbig">Want to enter the raffle?</h2>
+        <p class="qsub">Optional. Add your name and email to be entered in the drawing. This goes on a <strong>separate list</strong> and is <strong>never linked</strong> to your ratings — leave it blank to stay fully anonymous.</p>
+
+        <label class="rlabel" for="raffleName">Name</label>
+        <input id="raffleName" class="other-in" type="text" placeholder="Your name" autocomplete="name">
+
+        <label class="rlabel" for="raffleEmail">Email</label>
+        <input id="raffleEmail" class="other-in" type="email" placeholder="you@example.com" autocomplete="email">
+
+        <div class="actions">
+          <button type="button" class="ghost" onclick="backStep3()">Back</button>
+          <button type="button" class="primary" id="submitBtn" onclick="submitAll()">Submit</button>
+        </div>
+        <div class="err" id="err4"></div>
       </div>
 
       <!-- DONE -->
       <div class="done" id="done">
         <div class="check">✓</div>
         <h2>Thank you</h2>
-        <p>Your anonymous ratings are in. They'll help shape the next Events Handbook.</p>
+        <p>Your anonymous ratings are in — they'll help shape the next Events Handbook. If you entered the raffle, you're in the drawing.</p>
         <a class="again" href="https://thesisdriven.com/letters">Return to Thesis Driven</a>
       </div>
 
@@ -424,6 +443,19 @@
       window.scrollTo(0, 0);
     }
 
+    /* ---------- step 4: raffle (optional name + email) ---------- */
+    function goStep4() {
+      document.getElementById('step3').style.display = 'none';
+      document.getElementById('step4').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    function backStep3() {
+      document.getElementById('step4').style.display = 'none';
+      document.getElementById('step3').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
     function buildCards() {
       var wrap = document.getElementById('rcards');
       wrap.innerHTML = '';
@@ -515,28 +547,39 @@
         });
       });
 
+      // Optional raffle entry (step 4). Validate the email only if one was typed —
+      // leaving both blank is fine and keeps the submission fully anonymous.
+      var contact = {
+        name: document.getElementById('raffleName').value.trim(),
+        email: document.getElementById('raffleEmail').value.trim()
+      };
+      if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
+        showErr('err4', 'That email doesn’t look right. Fix it, or clear it to enter anonymously.');
+        return;
+      }
+
       var btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.textContent = 'Submitting…';
-      hideErr('err3');
+      hideErr('err4');
 
       // Plain-string body keeps this a CORS "simple request" (no preflight);
       // Apps Script doPost reads it from e.postData.contents.
       fetch(ENDPOINT, {
         method: 'POST',
-        body: JSON.stringify({ ratings: ratings, planning: planning, year: SURVEY_YEAR })
+        body: JSON.stringify({ ratings: ratings, planning: planning, contact: contact, year: SURVEY_YEAR })
       })
         .then(function (r) { return r.json(); })
         .then(function (res) {
           if (!res || !res.ok) throw new Error((res && res.error) || 'Save failed');
-          document.getElementById('step3').style.display = 'none';
+          document.getElementById('step4').style.display = 'none';
           document.getElementById('done').style.display = 'block';
           window.scrollTo(0, 0);
         })
         .catch(function (err) {
           btn.disabled = false;
           btn.textContent = 'Submit';
-          showErr('err3', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
+          showErr('err4', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
         });
     }
 
